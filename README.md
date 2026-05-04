@@ -88,21 +88,19 @@ export function Button({ onClick, children }: ButtonProps) {
   return <button onClick={onClick}>{children}</button>;
 }
 
-
 // user-actions.tsx
-import { Button } from './button.tsx';
+import { Button } from "./button.tsx";
 
 export function UserActions({ name, onEdit }: { name: string; onEdit: (name: string) => void }) {
   return <Button onClick={() => onEdit(name)}>Edit profile</Button>;
 }
 
-
 // user-actions.test.tsx
 import type { ReactNode } from "react";
 import { shallow } from "@hdong/shallow";
 
-import { Button } from './button.tsx';
-import { UserActions } from 'user-actions.tsx';
+import { Button } from "./button.tsx";
+import { UserActions } from "user-actions.tsx";
 
 test("calls an action from a shallow child", () => {
   const onEdit = vi.fn();
