@@ -1,35 +1,29 @@
 name: Publish to npm
 
 on:
-  # Manual trigger
-  workflow_dispatch:
-  # CI on direct pushes to main, and publish on version tags
   push:
-    branches: [main]
     tags:
       - "v*.*.*"
-  # Publish on GitHub Release
-  release:
-    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      id-token: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version-file: ".nvmrc"
-          cache: pnpm
+          node-version: 24
+          package-manager-cache: false # never use caching in release builds
           registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
@@ -50,30 +44,5 @@ jobs:
       - name: Build
         run: pnpm run build
 
-      - name: Verify tag matches version
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          TAG=${GITHUB_REF#refs/tags/}
-          PKG_VERSION=$(node -p "require('./package.json').version")
-          if [ "v$PKG_VERSION" != "$TAG" ]; then
-            echo "Tag ($TAG) does not match package.json version ($PKG_VERSION)" >&2
-            exit 1
-          fi
-
-      - name: Create version tag
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          TAG="v$VERSION"
-
-          if git ls-remote --exit-code --tags origin "refs/tags/$TAG"; then
-            echo "Tag $TAG already exists" >&2
-            exit 1
-          fi
-
-          git tag "$TAG"
-          git push origin "$TAG"
-
       - name: Publish to npm
-        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release' || github.event_name == 'workflow_dispatch'
-        run: npm publish --access public --no-git-checks
+        run: pnpm publish --access public
