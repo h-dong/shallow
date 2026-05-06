@@ -1,5 +1,17 @@
 # @hdong/shallow
 
+[![npm version][npm-badge]][npm-url] [![license][license-badge]][license-url] [![weekly downloads][downloads-badge]][npm-url] [![bundle size][bundle-badge]][bundle-url] [![Publish to npm][publish-badge]][publish-url]
+
+[npm-badge]: https://img.shields.io/npm/v/%40hdong%2Fshallow.svg
+[npm-url]: https://www.npmjs.com/package/@hdong/shallow
+[license-badge]: https://img.shields.io/npm/l/%40hdong%2Fshallow.svg
+[license-url]: ./LICENSE
+[downloads-badge]: https://badgen.net/npm/dw/@hdong/shallow
+[bundle-badge]: https://deno.bundlejs.com/badge?q=%40hdong%2Fshallow&config=%7B%22esbuild%22%3A%7B%22external%22%3A%5B%22react%22%2C%22react%2F*%22%2C%22vitest%22%2C%22vitest%2F*%22%5D%7D%7D
+[bundle-url]: https://bundlejs.com/?q=%40hdong%2Fshallow&config=%7B%22esbuild%22%3A%7B%22external%22%3A%5B%22react%22%2C%22react%2F*%22%2C%22vitest%22%2C%22vitest%2F*%22%5D%7D%7D
+[publish-badge]: https://github.com/h-dong/shallow/actions/workflows/publish.yml/badge.svg
+[publish-url]: https://github.com/h-dong/shallow/actions/workflows/publish.yml
+
 `shallow` is a React component testing library that runs components without a real DOM by simulating the small parts of React rendering and hooks needed for shallow tests.
 
 A library for testing React components like they are pure functions. `shallow` is a React component testing library that runs components without a real DOM by simulating the small parts of React rendering and hooks needed for shallow tests.

@@ -1,6 +1,6 @@
 {
   "name": "@hdong/shallow",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A library for testing React components like they are pure functions.",
   "keywords": [
     "component",
@@ -9,8 +9,16 @@
     "testing",
     "unit test"
   ],
+  "homepage": "https://github.com/h-dong/shallow#readme",
+  "bugs": {
+    "url": "https://github.com/h-dong/shallow/issues"
+  },
   "license": "MIT",
   "author": "Hao Dong <hey@hao.dev>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/h-dong/shallow.git"
+  },
   "files": [
     "dist",
     "LICENSE",
