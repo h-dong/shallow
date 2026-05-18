@@ -12,9 +12,7 @@
 [publish-badge]: https://github.com/h-dong/shallow/actions/workflows/publish.yml/badge.svg
 [publish-url]: https://github.com/h-dong/shallow/actions/workflows/publish.yml
 
-`shallow` is a React component testing library that runs components without a real DOM by simulating the small parts of React rendering and hooks needed for shallow tests.
-
-A library for testing React components like they are pure functions. `shallow` is a React component testing library that runs components without a real DOM by simulating the small parts of React rendering and hooks needed for shallow tests.
+`shallow` is a React component testing library that runs components without a real DOM by simulating the small parts of React rendering and hooks needed for shallow tests, allowing you to test components like pure functions.
 
 ## Performance
 
