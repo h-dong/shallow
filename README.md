@@ -181,6 +181,7 @@ After `registerMatchers()` runs, these matchers are available:
 
 - `toRenderText(expected)`
 - `toRender(type, expectedProps?)`
+- `toRenderLabelText(type, expected)`
 - `toHaveProps(expectedProps)`
 
 ## Development

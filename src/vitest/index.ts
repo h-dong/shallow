@@ -17,12 +17,14 @@ declare module "vitest" {
   interface Assertion<T> {
     toRenderText(expected: string | RegExp): void;
     toRender(type: unknown, expectedProps?: PropsRecord): void;
+    toRenderLabelText(type: unknown, expected: string): void;
     toHaveProps(expectedProps: PropsRecord): void;
   }
 
   interface AsymmetricMatchersContaining {
     toRenderText(expected: string | RegExp): void;
     toRender(type: unknown, expectedProps?: PropsRecord): void;
+    toRenderLabelText(type: unknown, expected: string): void;
     toHaveProps(expectedProps: PropsRecord): void;
   }
 }
@@ -57,6 +59,16 @@ export const registerMatchers = () => {
       return {
         pass,
         message: () => `Expected output ${this.isNot ? "not " : ""}to render ${getName(type)}.`,
+      };
+    },
+    toRenderLabelText(received: ShallowOutputLike, type: unknown, expected: string) {
+      const nodes = received.findAll?.(type) ?? [];
+      const pass = nodes.some((node) => partialMatch(node.props(), { "aria-label": expected }));
+
+      return {
+        pass,
+        message: () =>
+          `Expected output ${this.isNot ? "not " : ""}to render ${getName(type)} with label text ${expected}.`,
       };
     },
     toHaveProps(received: ShallowNodeLike, expectedProps: PropsRecord) {

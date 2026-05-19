@@ -105,6 +105,7 @@ example-specific code to look up mocks by names such as `useCurrentUser`.
 
 - `toRenderText(expected)`
 - `toRender(type, expectedProps?)`
+- `toRenderLabelText(type, expected)`
 - `toHaveProps(expectedProps)`
 
 These matchers make tests read closer to the intent of shallow rendering,
