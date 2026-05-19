@@ -1,6 +1,11 @@
 import { registerMatchers } from ".";
+import { createNode } from "../modules/tree";
 
 function Badge() {
+  return null;
+}
+
+function TextInput() {
   return null;
 }
 
@@ -57,6 +62,56 @@ describe("vitest matchers", () => {
     );
     expect(() => expect(output).not.toRenderLabelText(Badge, "Active status")).toThrow(
       "Expected output not to render Badge with label text Active status.",
+    );
+  });
+
+  test("matches label text using Testing Library label associations", () => {
+    const output = {
+      nodes: () => [
+        createNode("label", { htmlFor: "username-input", children: "Username" }),
+        createNode("input", { id: "username-input" }),
+        createNode("label", { id: "email-label", children: "Email" }),
+        createNode("input", { "aria-labelledby": "email-label" }),
+        createNode("label", {}, [
+          createNode("#text", { children: "Password " }),
+          createNode("input", { id: "password-input" }),
+        ]),
+        createNode("label", {}, [
+          createNode("span", { children: "Display name" }),
+          createNode("input", { id: "display-name-input" }),
+        ]),
+        createNode("input", { "aria-label": "Search" }),
+      ],
+    };
+
+    expect(output).toRenderLabelText("input", "Username");
+    expect(output).toRenderLabelText("input", "Email");
+    expect(output).toRenderLabelText("input", "Password");
+    expect(output).toRenderLabelText("input", "Display name");
+    expect(output).toRenderLabelText("input", "Search");
+  });
+
+  test("matches React components and regular expressions by label text", () => {
+    const output = {
+      nodes: () => [
+        createNode("label", { htmlFor: "component-input", children: "Account name" }),
+        createNode(TextInput, { id: "component-input" }),
+      ],
+    };
+
+    expect(output).toRenderLabelText(TextInput, /account\s+name/i);
+  });
+
+  test("does not match for/htmlFor labels against non-labelable host elements", () => {
+    const output = {
+      nodes: () => [
+        createNode("section", { id: "photos-section" }),
+        createNode("label", { htmlFor: "photos-section", children: "Photos" }),
+      ],
+    };
+
+    expect(() => expect(output).toRenderLabelText("section", "Photos")).toThrow(
+      "Expected output to render section with label text Photos.",
     );
   });
 
