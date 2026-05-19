@@ -69,11 +69,16 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
+    environment: "node",
     globals: true,
     setupFiles: ["./setupTest.ts"],
   },
 });
 ```
+
+`shallow` does not need jsdom or another DOM-like environment. Setting
+`environment: "node"` keeps shallow-only tests from paying DOM environment setup
+cost, especially in projects that otherwise default Vitest to `jsdom`.
 
 If you use Vitest globals, add the global types to your TypeScript config:
 
