@@ -39,6 +39,27 @@ describe("vitest matchers", () => {
     expect(() => expect(output).toRender("Missing")).toThrow("Expected output to render Missing.");
   });
 
+  test("matches rendered nodes by label text", () => {
+    const output = {
+      findAll: (type: unknown) =>
+        type === Badge
+          ? [
+              {
+                props: () => ({ "aria-label": "Active status", tone: "success" }),
+              },
+            ]
+          : [],
+    };
+
+    expect(output).toRenderLabelText(Badge, "Active status");
+    expect(() => expect(output).toRenderLabelText(Badge, "Inactive status")).toThrow(
+      "Expected output to render Badge with label text Inactive status.",
+    );
+    expect(() => expect(output).not.toRenderLabelText(Badge, "Active status")).toThrow(
+      "Expected output not to render Badge with label text Active status.",
+    );
+  });
+
   test("matches component node props", () => {
     const node = {
       props: () => ({ label: "Active", tone: "success" }),
