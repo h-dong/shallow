@@ -67,7 +67,11 @@ const isLabelableNode = (node: TreeNode) => {
   return node.type !== "input" || node.props.type !== "hidden";
 };
 
-const getNodeText = (node: TreeNode, excludeLabelableDescendants = false, isRoot = true): string => {
+const getNodeText = (
+  node: TreeNode,
+  excludeLabelableDescendants = false,
+  isRoot = true,
+): string => {
   if (!isRoot && excludeLabelableDescendants && isLabelableNode(node)) {
     return "";
   }
