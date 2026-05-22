@@ -192,7 +192,7 @@ describe("debug", () => {
   });
 
   test("formats element values, mock methods without values, and empty sections", () => {
-    const write = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     const debug = createDebug(
       createDebugOutput({
         nodes: [createNode("section", { icon: <Child /> })],
@@ -216,14 +216,13 @@ describe("debug", () => {
     // @ts-expect-error test fallback scheduling path
     delete globalThis.queueMicrotask;
 
-    const originalProcess = (
-      globalThis as typeof globalThis & {
-        process?: { stderr?: { write?: (message: string) => unknown } };
-      }
-    ).process;
-    (globalThis as typeof globalThis & { process?: unknown }).process = {
-      stdout: { write: stdoutWrite },
+    type DebugProcess = {
+      stderr?: { write?: (message: string) => unknown };
+      stdout?: { write?: (message: string) => unknown };
     };
+    const globalScope = globalThis as { process?: DebugProcess };
+    const originalProcess = globalScope.process;
+    globalScope.process = { stdout: { write: stdoutWrite } };
 
     createDebug(createDebugOutput({ nodes: [createNode("span", { children: "Ready" })] }));
     await Promise.resolve();
@@ -232,25 +231,34 @@ describe("debug", () => {
     expect(consoleLog).not.toHaveBeenCalled();
 
     globalThis.queueMicrotask = queueMicrotask;
-    (globalThis as typeof globalThis & { process?: unknown }).process = originalProcess;
+    if (originalProcess === undefined) {
+      delete globalScope.process;
+    } else {
+      globalScope.process = originalProcess;
+    }
     consoleLog.mockRestore();
   });
 
   test("logs through console when no process streams exist", async () => {
     const consoleLog = vi.spyOn(console, "log").mockImplementation(() => undefined);
-    const originalProcess = (
-      globalThis as typeof globalThis & {
-        process?: { stderr?: { write?: (message: string) => unknown } };
-      }
-    ).process;
-    (globalThis as typeof globalThis & { process?: unknown }).process = undefined;
+    type DebugProcess = {
+      stderr?: { write?: (message: string) => unknown };
+      stdout?: { write?: (message: string) => unknown };
+    };
+    const globalScope = globalThis as { process?: DebugProcess };
+    const originalProcess = globalScope.process;
+    delete globalScope.process;
 
     createDebug(createDebugOutput({ nodes: [createNode("span", { children: "Ready" })] }));
     await Promise.resolve();
 
     expect(consoleLog).toHaveBeenCalledWith(expect.stringContaining("Shallow Debug"));
 
-    (globalThis as typeof globalThis & { process?: unknown }).process = originalProcess;
+    if (originalProcess === undefined) {
+      delete globalScope.process;
+    } else {
+      globalScope.process = originalProcess;
+    }
     consoleLog.mockRestore();
   });
 });

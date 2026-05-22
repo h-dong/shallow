@@ -245,7 +245,7 @@ describe("shallow", () => {
 
     const exotic = { $$typeof: Symbol.for("react.element"), type: Symbol("exotic"), props: {} };
     function ExoticHost() {
-      return exotic as React.ReactElement;
+      return exotic as unknown as React.ReactElement;
     }
 
     expect(shallow(ExoticHost).render().nodes()).toEqual([]);
@@ -256,7 +256,7 @@ describe("shallow", () => {
       return <Child label="child" />;
     }
     const api = shallow(Host);
-    api.mock(Child).returnFull(null);
+    api.mock(Child).returnFull(<></>);
     const output = api.render();
 
     expect(output.timelineEvents().some((event) => event.kind === "mock-config")).toBe(true);

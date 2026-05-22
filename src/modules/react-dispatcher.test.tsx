@@ -40,16 +40,24 @@ describe("withReactDispatcher", () => {
 
     expect(value).toBe("ok");
 
-    reactWithInternals[key] = previousInternals;
+    if (previousInternals === undefined) {
+      delete reactWithInternals[key];
+    } else {
+      reactWithInternals[key] = previousInternals;
+    }
   });
 
   test("supports effect and debug hook no-ops", () => {
-    withReactDispatcher(new Map(), () => {
+    const value = withReactDispatcher(new Map(), () => {
       React.useEffect(() => undefined);
       React.useLayoutEffect(() => undefined);
       React.useInsertionEffect(() => undefined);
       React.useDebugValue("state");
+
+      return "ok";
     });
+
+    expect(value).toBe("ok");
   });
 
   test("falls back to the context default value", () => {
