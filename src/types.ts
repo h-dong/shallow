@@ -146,6 +146,17 @@ export type ShallowOutput = {
   timelineEvents: () => DebugTimelineEvent[];
 };
 
+export type ShallowHookResult<Result> = {
+  readonly current: Result;
+};
+
+export type ShallowHookRenderApi<Result> = {
+  output: ShallowOutput;
+  result: ShallowHookResult<Result>;
+  rerender: () => unknown;
+  unmount: () => void;
+};
+
 export type TreeNode = {
   type: ShallowRenderType;
   typeName: string;

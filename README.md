@@ -26,6 +26,8 @@ So this kind of test can be faster, especially for component logic tests where y
 - What happens when a callback prop is triggered
 - How hooks/state affect output
 
+Use `shallowHook()` to test custom hooks directly without a visible UI tree.
+
 The caveat is that it is not equivalent to real DOM rendering. It will not catch issues involving actual browser behavior, accessibility semantics, layout, focus, form behavior, portals, real effects, event propagation, or React DOM integration. So it's usually best as a faster unit-test layer, not a total replacement for React Testing Library (RTL) tests.
 
 ### Some Non-scientific Comparison Metrics
@@ -128,6 +130,40 @@ test("calls an action from a shallow child", () => {
 ```
 
 ## API
+
+### `shallowHook(useHook)`
+
+Runs a hook inside a hidden harness component and returns the latest hook result
+without rendering UI. Use this for fast unit tests of custom hooks and state
+logic.
+
+```ts
+import { shallowHook } from "@hdong/shallow";
+
+function useCounter(initial = 0) {
+  const [count, setCount] = useState(initial);
+  return { count, increment: () => setCount((value) => value + 1) };
+}
+
+test("increments", () => {
+  const { result, rerender } = shallowHook(() => useCounter());
+
+  result.current.increment();
+  rerender();
+
+  expect(result.current.count).toBe(1);
+});
+```
+
+Returns:
+
+- `result.current` — latest value returned by `useHook`
+- `output` — shallow output for the harness (usually empty; use `not.toBeRendered()` after `unmount()`)
+- `rerender()` — re-run the hook (call after state updates from hook actions)
+- `unmount()` — tear down the harness
+
+Call `rerender()` after invoking functions that update hook state (for example
+`increment()`), so `result.current` reflects the next render.
 
 ### `shallow(Component, options?)`
 
