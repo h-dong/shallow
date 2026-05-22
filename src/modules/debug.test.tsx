@@ -169,7 +169,9 @@ describe("debug", () => {
   test("omits test metadata when no active test is available", () => {
     const write = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     vi.spyOn(debugModule, "getDebugTestInfo").mockReturnValue({});
-    const debug = createDebug(createDebugOutput({ nodes: [createNode("span", { children: "Ready" })] }));
+    const debug = createDebug(
+      createDebugOutput({ nodes: [createNode("span", { children: "Ready" })] }),
+    );
 
     debug.tree();
 

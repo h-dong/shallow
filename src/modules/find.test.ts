@@ -17,18 +17,18 @@ describe("findTreeNodes", () => {
     const root = createNode("button", { children: "Save" });
     const section = createNode("section", {}, [root]);
 
-    expect(
-      findTreeNodes([], { type: "button" }, readText, { includeRoots: [root] }),
-    ).toEqual([root]);
-    expect(findTreeNodes([section], { type: "button" }, readText, { childrenOnly: true })).toEqual(
-      [root],
-    );
+    expect(findTreeNodes([], { type: "button" }, readText, { includeRoots: [root] })).toEqual([
+      root,
+    ]);
+    expect(findTreeNodes([section], { type: "button" }, readText, { childrenOnly: true })).toEqual([
+      root,
+    ]);
   });
 
   test("returns undefined for optional misses", () => {
-    expect(findTreeNodes([createNode("span", {})], { text: "missing", optional: true }, readText)).toEqual(
-      [],
-    );
+    expect(
+      findTreeNodes([createNode("span", {})], { text: "missing", optional: true }, readText),
+    ).toEqual([]);
     expect(
       finalizeFind(
         [],
@@ -51,8 +51,8 @@ describe("findTreeNodes", () => {
     const button = createNode("button", { name: "save", children: "Save" });
     const other = createNode("button", { name: "cancel", children: "Cancel" });
 
-    expect(
-      findTreeNodes([button, other], { type: "button", name: "save" }, readText),
-    ).toEqual([button]);
+    expect(findTreeNodes([button, other], { type: "button", name: "save" }, readText)).toEqual([
+      button,
+    ]);
   });
 });
