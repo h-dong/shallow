@@ -26,7 +26,7 @@ So this kind of test can be faster, especially for component logic tests where y
 - What happens when a callback prop is triggered
 - How hooks/state affect output
 
-The caveat is that it is not equivalent to real DOM rendering. It will not catch issues involving actual browser behavior, accessibility semantics, layout, focus, form behavior, portals, real effects, event propagation, or React DOM integration. So it’s usually best as a faster unit-test layer, not a total replacement for React Testing Library (RTL) tests.
+The caveat is that it is not equivalent to real DOM rendering. It will not catch issues involving actual browser behavior, accessibility semantics, layout, focus, form behavior, portals, real effects, event propagation, or React DOM integration. So it's usually best as a faster unit-test layer, not a total replacement for React Testing Library (RTL) tests.
 
 ### Some Non-scientific Comparison Metrics
 
@@ -146,21 +146,77 @@ Renders the root component and returns an output object.
 
 The output supports:
 
-- `find(type)`
-- `findAll(type)`
+- `find(...)` / `findAll(...)` — locate nodes (see below)
 - `text()`
 - `rerender(nextProps)`
 - `unmount()`
 - `nodes()`
 
-Found nodes support:
+Found nodes also support `find(...)`, `findAll(...)`, `props()`, `text()`, `trigger(...)`, and `click()`.
 
-- `props()`
-- `text()`
-- `find(type)`
-- `findAll(type)`
-- `trigger(propName, ...args)`
-- `click(...args)`
+#### `find(type)`
+
+Returns the first matching node. Throws if none are found.
+
+```ts
+output.find(Button);
+output.find("button");
+```
+
+#### `find(type, options)`
+
+Narrows the match with extra criteria on the same node:
+
+```ts
+output.find(Button, { text: "Save" });
+output.find("button", { name: "submit" });
+```
+
+#### `findAll(type)`
+
+Returns every match as an array (use `.length`, indexing, etc.):
+
+```ts
+expect(output.findAll("div")).toHaveLength(2);
+const rows = output.findAll(TodoRow);
+rows[1].trigger("onSelect");
+```
+
+#### `findAll(type, options)`
+
+Same criteria as `find(type, options)`, but returns all matches:
+
+```ts
+output.findAll("button", { name: "submit" });
+```
+
+#### `find(criteria)`
+
+Locate by props, text, test id, and more without passing the type as a separate argument:
+
+```ts
+output.find({ testId: "menu-button" });
+output.find({ type: Button, props: { children: "Save" } });
+```
+
+Criteria:
+
+- `type` — component or host type
+- `props` — partial prop match
+- `id` — `id` attribute
+- `testId` — `data-testid`
+- `text` — rendered text (`string` or `RegExp`)
+- `labelText` — `aria-label`, `aria-labelledby`, `label` prop, or rendered text
+- `className` — `className` token match
+- `role` — `role` prop or host type name
+- `name` — `name` prop or `aria-label`
+- `optional` — on `find` only, return `undefined` instead of throwing when nothing matches
+
+#### Chaining
+
+```ts
+output.find("section").find("button", { name: "submit" }).click();
+```
 
 ### `mock(target)`
 
@@ -184,10 +240,32 @@ output history. Create a fresh `shallow(Component)` API per test, or call
 
 After `registerMatchers()` runs, these matchers are available:
 
-- `toRenderText(expected)`
+**Output (outer rendered element):**
+
+- `toBeRendered()`
+- `toRenderText(expected)` / `toHaveText(expected)` — text within the outer element
+- `toHaveName(name)`
+- `toHaveTestId(testId)`
+- `toHaveId(id)`
+- `toHaveLabel(label)` — `aria-label`, `aria-labelledby`, `label` prop, or rendered text
+- `toHaveRole(role)`
+- `toHaveClass(className)` — `className` token
+- `toBeElement(type)` — host tag (`"button"`) or component (`Button`)
+- `toBeEnabled()` / `toBeDisabled()` — `disabled` prop on the outer element
+- `toBeChecked()` / `toBeUnchecked()` — `checked` prop on the outer element
+- `toHaveValue(value)` — `value` prop on the outer element
+- `toHaveProps(propName, value)` — a single prop on the outer element
+
+**Output (anywhere in tree):**
+
 - `toRender(type, expectedProps?)`
 - `toRenderLabelText(type, expected)`
-- `toHaveProps(expectedProps)`
+
+Use `expect(output).not.toBeRendered()` after `unmount()` when the tree should be empty.
+
+**Component node:**
+
+- `toHaveProps(expectedProps)` — partial prop match on a found node
 
 ## Development
 

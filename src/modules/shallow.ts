@@ -14,6 +14,7 @@ import type {
   MockConfiguration,
   MockState,
   PropsRecord,
+  ShallowRenderType,
   TreeNode,
   UnknownFunction,
 } from "../types";
@@ -95,7 +96,10 @@ export const shallow = <Props extends object>(
 
   const getMock = (target: unknown) => {
     if (!mocksByTarget.has(target)) {
-      const state: MockState = { calls: [], name: getName(target) };
+      const state: MockState = {
+        calls: [],
+        name: getName(target as ShallowRenderType | Record<string, unknown>),
+      };
       mocksByTarget.set(target, state);
       mocksByName.set(state.name, state);
     }
@@ -169,7 +173,7 @@ export const shallow = <Props extends object>(
         return traverse(rendered, rootComponent, contextValues, hookRuntime);
       }
 
-      const node = createNode(type, props);
+      const node = createNode(type as ShallowRenderType, props);
 
       if (mockState?.componentImplementation) {
         const componentImplementation = mockState.componentImplementation;
@@ -206,7 +210,7 @@ export const shallow = <Props extends object>(
 
         output.addTimelineEvents(drainPendingTimelineEvents());
         output.addTimelineEvent({
-          componentName: getName(Component),
+          componentName: getName(Component as ShallowRenderType),
           kind: "rerender",
           props: currentProps,
         });
@@ -217,7 +221,7 @@ export const shallow = <Props extends object>(
         output.addInteraction(interaction);
         output.addTimelineEvent({ interaction, kind: "trigger" });
         output.addTimelineEvent({
-          componentName: getName(Component),
+          componentName: getName(Component as ShallowRenderType),
           kind: "rerender",
           props: currentProps,
         });
@@ -264,7 +268,7 @@ export const shallow = <Props extends object>(
     };
 
     output.addTimelineEvent({
-      componentName: getName(Component),
+      componentName: getName(Component as ShallowRenderType),
       kind: "render",
       props: currentProps,
     });

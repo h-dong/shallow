@@ -73,7 +73,7 @@ describe("shallow", () => {
 
     output.unmount();
 
-    expect(output.nodes()).toEqual([]);
+    expect(output).not.toBeRendered();
   });
 
   test("executes components named Provider while keeping other children shallow", () => {
