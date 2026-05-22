@@ -210,6 +210,55 @@ describe("vitest matchers", () => {
     expect(() => expect(uncheckedInput).toBeChecked()).toThrow(
       "Expected element to be checked. checked=false",
     );
+    expect(() => expect(disabledInput).not.toBeDisabled()).toThrow(
+      "Expected element not to be disabled. disabled=true",
+    );
+    expect(() => expect(uncheckedInput).not.toBeUnchecked()).toThrow(
+      "Expected element not to be unchecked. checked=false",
+    );
+  });
+
+  test("reports element matcher failure messages", () => {
+    const node = {
+      props: () => ({
+        name: "search",
+        id: "search-id",
+        "data-testid": "search-test",
+        "aria-label": "Search",
+        role: "button",
+        className: "search-button",
+        value: "query",
+        children: "Search",
+      }),
+      text: () => "Search",
+      elementTag: () => "button",
+    };
+
+    expect(() => expect(node).not.toHaveText("Search")).toThrow(
+      "Expected text not to include Search. Actual text: Search",
+    );
+    expect(() => expect(node).not.toHaveName("search")).toThrow(
+      "Expected element not to have name search.",
+    );
+    expect(() => expect(node).not.toHaveTestId("search-test")).toThrow(
+      "Expected element not to have test id search-test.",
+    );
+    expect(() => expect(node).not.toHaveId("search-id")).toThrow(
+      "Expected element not to have id search-id.",
+    );
+    expect(() => expect(node).not.toHaveLabel("Search")).toThrow(
+      "Expected element not to have label Search.",
+    );
+    expect(() => expect(node).not.toHaveRole("button")).toThrow(
+      "Expected element not to have role button.",
+    );
+    expect(() => expect(node).not.toHaveValue("query")).toThrow(
+      'Expected element not to have value "query". Actual value: "query"',
+    );
+    expect(node).toHaveProps("children", "Search");
+    expect(() => expect(node).not.toHaveProps("children", "Search")).toThrow(
+      'Expected element prop children not to equal "Search".',
+    );
   });
 
   test("matches component node props", () => {

@@ -157,6 +157,133 @@ describe("shallow", () => {
     ]);
   });
 
+  test("uses render-time wrapper and external mock integrations", () => {
+    function Wrapper({ children }: { children: React.ReactNode }) {
+      return <div>{children}</div>;
+    }
+    function Host() {
+      return <Child label="wrapped" />;
+    }
+    const external = vi.fn();
+    const api = shallow(Host);
+
+    api.mock(external).callsFake(() => "external");
+    const output = api.render({}, { wrapper: Wrapper });
+
+    expect(output.find("div").find(Child).props()).toEqual({ label: "wrapped" });
+    expect(external).not.toHaveBeenCalled();
+  });
+
+  test("records mock errors from external mocks", () => {
+    const error = new Error("mock failed");
+    const external = vi.fn();
+    function Target() {
+      external();
+      return null;
+    }
+    const api = shallow(Target);
+
+    api.mock(external).throws(error);
+
+    expect(() => api.render()).toThrow(error);
+  });
+
+  test("uses component mock implementations", () => {
+    function Target() {
+      return <Child label="child" />;
+    }
+    const api = shallow(Target);
+
+    api.mock(Child).component((props: ChildProps) => <em>{props.label}</em>);
+    const output = api.render();
+
+    expect(output.find("em")).toHaveText("child");
+  });
+
+  test("uses default component mock rendering", () => {
+    function TargetWithNested() {
+      return (
+        <Child label="child">
+          <span>Nested</span>
+        </Child>
+      );
+    }
+    const nested = shallow(TargetWithNested);
+    nested.mock(Child).component();
+    expect(nested.render().find("span")).toHaveText("Nested");
+  });
+
+  test("ignores render output with unsupported element types", () => {
+    function Host() {
+      return React.createElement(0 as unknown as "div", {}, "ignored");
+    }
+
+    expect(shallow(Host).render().nodes()).toEqual([]);
+  });
+
+  test("rejects non-function non-record mock targets", () => {
+    const api = shallow(function Host() {
+      return null;
+    });
+
+    expect(() => api.mock(123 as never)).not.toThrow();
+    expect(api.mock(123 as never).calls()).toEqual([]);
+  });
+
+  test("restores context values and ignores unknown element types", () => {
+    const Context = React.createContext("default");
+    function Host() {
+      return (
+        <Context.Provider value="provided">
+          <Child label="child" />
+        </Context.Provider>
+      );
+    }
+
+    const output = shallow(Host).render();
+    expect(output.find(Child).props()).toEqual({ label: "child" });
+
+    const exotic = { $$typeof: Symbol.for("react.element"), type: Symbol("exotic"), props: {} };
+    function ExoticHost() {
+      return exotic as React.ReactElement;
+    }
+
+    expect(shallow(ExoticHost).render().nodes()).toEqual([]);
+  });
+
+  test("records mock configuration in the timeline", () => {
+    function Host() {
+      return <Child label="child" />;
+    }
+    const api = shallow(Host);
+    api.mock(Child).returnFull(null);
+    const output = api.render();
+
+    expect(output.timelineEvents().some((event) => event.kind === "mock-config")).toBe(true);
+  });
+
+  test("reads props when element props are missing", () => {
+    function Host() {
+      return React.createElement("div", null as unknown as React.ComponentProps<"div">, "text");
+    }
+
+    expect(shallow(Host).render().find("div").props()).toEqual({ children: "text" });
+  });
+
+  test("merges partial mock values with non-object results", () => {
+    const fn = vi.fn(() => "plain");
+    function Host() {
+      fn();
+      return null;
+    }
+    const api = shallow(Host);
+
+    api.mock(fn).return({ tracked: true });
+    api.render();
+
+    expect(fn()).toEqual({ tracked: true });
+  });
+
   test("records mock setup, render, mock calls, and rerender in timeline", () => {
     const useFlag = Object.assign(
       vi.fn(() => false),

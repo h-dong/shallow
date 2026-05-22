@@ -12,6 +12,19 @@ describe("utils", () => {
     expect(getName(NamedComponent)).toBe("NamedComponent");
     expect(getName(DisplayComponent)).toBe("Displayed");
     expect(getName({})).toBe("Anonymous");
+    expect(getName({ name: "NamedRecord" })).toBe("NamedRecord");
+    expect(getName({ displayName: "DisplayRecord" })).toBe("DisplayRecord");
+
+    const NamedOnly = function NamedOnly() {
+      return null;
+    };
+
+    expect(getName(NamedOnly)).toBe("NamedOnly");
+
+    const Anonymous = () => null;
+    Object.defineProperty(Anonymous, "name", { configurable: true, value: undefined });
+
+    expect(getName(Anonymous)).toBe("Anonymous");
   });
 
   test("detects React elements and normalizes children", () => {

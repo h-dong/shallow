@@ -1,4 +1,10 @@
-import { assertQueryCriteria, hasQueryCriteria, matchesCriteria } from "./query";
+import {
+  assertQueryCriteria,
+  hasQueryCriteria,
+  matchesCriteria,
+  queryNodeScope,
+  queryTreeNodes,
+} from "./query";
 import { createNode } from "./tree";
 
 const readText = (node: ReturnType<typeof createNode>) => {
@@ -41,5 +47,24 @@ describe("query", () => {
     expect(matchesCriteria(button, { role: "button" }, readText)).toBe(true);
     expect(matchesCriteria(button, { name: "submit" }, readText)).toBe(true);
     expect(matchesCriteria(button, { name: "missing" }, readText)).toBe(false);
+    expect(matchesCriteria(button, { className: "primary" }, readText)).toBe(true);
+    expect(matchesCriteria(createNode("div", { className: 1 }), { className: "x" }, readText)).toBe(
+      false,
+    );
+    expect(matchesCriteria(createNode("nav", { role: "navigation" }), { role: "nav" }, readText)).toBe(
+      true,
+    );
+    expect(matchesCriteria(createNode("button", {}), { role: "button" }, readText)).toBe(true);
+    expect(matchesCriteria(button, { labelText: "Missing" }, readText)).toBe(false);
+  });
+
+  test("queries scoped roots and nodes", () => {
+    const root = createNode("section", {}, [createNode("button", { children: "Save" })]);
+
+    expect(queryTreeNodes([], { text: "Save" }, readText, { includeRoots: [root] })).toHaveLength(1);
+    expect(
+      queryTreeNodes([], { type: "section" }, readText, { includeRoots: [root] }),
+    ).toHaveLength(1);
+    expect(queryNodeScope(root, { type: "button" }, readText)?.props.children).toBe("Save");
   });
 });

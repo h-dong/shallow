@@ -118,6 +118,15 @@ describe("tree", () => {
     expect(output.find({ testId: "missing", optional: true })).not.toBeRendered();
   });
 
+  test("exposes mock calls, interactions, and timeline events from output", () => {
+    const output = createOutput(vi.fn());
+    output.setTree([createNode("span", { children: "Ready" })]);
+
+    expect(output.mockCalls()).toEqual([]);
+    expect(output.interactions()).toEqual([]);
+    expect(output.timelineEvents()).toEqual([]);
+  });
+
   test("reads nested text from strings, numbers, arrays, and React children", () => {
     const output = createOutput(vi.fn());
     output.setTree([
@@ -128,6 +137,13 @@ describe("tree", () => {
 
     expect(output.text()).toBe("Count: 2 done!");
     expect(output.find("section").text()).toBe("Count: 2 done!");
+  });
+
+  test("ignores unsupported child values when reading text", () => {
+    const output = createOutput(vi.fn());
+    output.setTree([createNode("section", { children: { unsupported: true } })]);
+
+    expect(output.text()).toBe("");
   });
 
   test("triggers callbacks and reports non-functions", () => {
