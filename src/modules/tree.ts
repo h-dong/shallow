@@ -2,11 +2,23 @@ import type {
   ComponentNode,
   ComponentNodeList,
   DebugTimelineEvent,
+  FindAllFn,
+  FindCriteria,
+  FindFn,
+  FindOptions,
   MockCall,
   PropsRecord,
+  ShallowRenderType,
   TreeNode,
   TriggerInteraction,
 } from "../types";
+import {
+  finalizeFind,
+  findTreeNodes,
+  isTypeOnlyFind,
+  toFindCriteria,
+  type InternalFindCriteria,
+} from "./find";
 import { getComparableProps, getName, isElement } from "./utils";
 
 type CallableProp = (...args: unknown[]) => unknown;
@@ -33,36 +45,63 @@ const getText = (value: unknown): string => {
   return "";
 };
 
-const nodeText = (node: TreeNode): string => {
-  return getText(node.props.children) + node.children.map(nodeText).join("");
+export const getRenderedNodeText = (node: TreeNode): string => {
+  const nodeText = (current: TreeNode): string =>
+    getText(current.props.children) + current.children.map(nodeText).join("");
+
+  return nodeText(node);
 };
 
-const matchesType = (node: TreeNode, type: unknown) => {
-  if (node.type === type) {
-    return true;
-  }
-
-  return getName(type) === node.typeName;
-};
-
-const collect = (nodes: TreeNode[], type: unknown): TreeNode[] => {
-  const matches: TreeNode[] = [];
-
-  for (const node of nodes) {
-    if (matchesType(node, type)) {
-      matches.push(node);
-    }
-
-    matches.push(...collect(node.children, type));
-  }
-
-  return matches;
-};
-
-const toComponentNodeList = (nodes: ComponentNode[]): ComponentNodeList =>
-  nodes as ComponentNodeList;
+const readNodeText = (node: TreeNode) => getRenderedNodeText(node);
 
 type AfterTrigger = (interaction: TriggerInteraction) => void;
+
+const createComponentNodeList = (
+  nodes: TreeNode[],
+  afterTrigger?: AfterTrigger,
+): ComponentNodeList =>
+  nodes.map((node) => createComponentNode(node, afterTrigger)) as ComponentNodeList;
+
+const toFindScopeOptions = (scope: {
+  nodes: TreeNode[];
+  includeRoots?: TreeNode[];
+  childrenOnly?: boolean;
+}) => ({
+  ...(scope.includeRoots ? { includeRoots: scope.includeRoots } : {}),
+  ...(scope.childrenOnly ? { childrenOnly: scope.childrenOnly } : {}),
+});
+
+const createFindHandlers = (
+  getScope: (criteria: InternalFindCriteria) => {
+    nodes: TreeNode[];
+    includeRoots?: TreeNode[];
+    childrenOnly?: boolean;
+  },
+  afterTrigger?: AfterTrigger,
+) => {
+  const createNode = (treeNode: TreeNode) => createComponentNode(treeNode, afterTrigger);
+  const createList = (treeNodes: TreeNode[]) => createComponentNodeList(treeNodes, afterTrigger);
+
+  const run = (
+    typeOrCriteria: ShallowRenderType | FindCriteria,
+    options: FindOptions | undefined,
+    all: boolean,
+  ): ComponentNode | ComponentNodeList | undefined => {
+    const criteria: InternalFindCriteria = { ...toFindCriteria(typeOrCriteria, options), all };
+    const scope = getScope(criteria);
+    const matches = findTreeNodes(scope.nodes, criteria, readNodeText, toFindScopeOptions(scope));
+
+    return finalizeFind(matches, criteria, createNode, createList);
+  };
+
+  const find = (typeOrCriteria: ShallowRenderType | FindCriteria, options?: FindOptions) =>
+    run(typeOrCriteria, options, false) as ComponentNode | undefined;
+
+  const findAll = (typeOrCriteria: ShallowRenderType | FindCriteria, options?: FindOptions) =>
+    run(typeOrCriteria, options, true) as ComponentNodeList;
+
+  return { find: find as FindFn, findAll: findAll as FindAllFn };
+};
 
 const createComponentNode = (node: TreeNode, afterTrigger?: AfterTrigger): ComponentNode => {
   const trigger = (propName: string, ...args: unknown[]) => {
@@ -93,22 +132,15 @@ const createComponentNode = (node: TreeNode, afterTrigger?: AfterTrigger): Compo
 
   return {
     props: () => node.props,
-    text: () => nodeText(node),
-    find: (type: unknown) => {
-      const child = collect(node.children, type)[0];
+    text: () => getRenderedNodeText(node),
+    elementTag: () => node.typeName,
+    ...createFindHandlers((criteria) => {
+      const typeOnly = isTypeOnlyFind(criteria);
 
-      if (!child) {
-        throw new Error(
-          `Expected ${node.typeName} to render ${getName(type)}, but it was not found.`,
-        );
-      }
-
-      return createComponentNode(child, afterTrigger);
-    },
-    findAll: (type: unknown) =>
-      toComponentNodeList(
-        collect(node.children, type).map((child) => createComponentNode(child, afterTrigger)),
-      ),
+      return typeOnly
+        ? { nodes: node.children, childrenOnly: true }
+        : { nodes: node.children, includeRoots: [node] };
+    }, afterTrigger),
     trigger,
     click,
   };
@@ -123,27 +155,14 @@ export const createOutput = (
   const interactions: TriggerInteraction[] = [];
   const mockCalls: MockCall[] = [];
   const timelineEvents: DebugTimelineEvent[] = [...initialTimelineEvents];
-
   const output = {
     __shallow: true,
     setTree: (nextTree: TreeNode[]) => {
       tree = nextTree;
       return output;
     },
-    find: (type: unknown) => {
-      const node = collect(tree, type)[0];
-
-      if (!node) {
-        throw new Error(`Expected output to render ${getName(type)}, but it was not found.`);
-      }
-
-      return createComponentNode(node, afterTrigger);
-    },
-    findAll: (type: unknown) =>
-      toComponentNodeList(
-        collect(tree, type).map((node) => createComponentNode(node, afterTrigger)),
-      ),
-    text: () => tree.map(nodeText).join(""),
+    ...createFindHandlers(() => ({ nodes: tree }), afterTrigger),
+    text: () => tree.map(getRenderedNodeText).join(""),
     rerender: rerenderImpl,
     unmount: () => {
       tree = [];
@@ -170,7 +189,7 @@ export const createOutput = (
 };
 
 export const createNode = (
-  type: unknown,
+  type: ShallowRenderType,
   props: PropsRecord,
   children: TreeNode[] = [],
 ): TreeNode => ({

@@ -53,11 +53,48 @@ export type MockState = {
   componentImplementation?: ComponentImplementation;
 };
 
+/** Host element tag, `"#text"`, display name, or React component type used to locate nodes. */
+export type ShallowRenderType = string | React.ComponentType<any> | React.ExoticComponent<any>;
+
+export type QueryCriteria = {
+  type?: ShallowRenderType;
+  props?: PropsRecord;
+  id?: string;
+  testId?: string;
+  text?: string | RegExp;
+  labelText?: string;
+  className?: string;
+  role?: string;
+  name?: string;
+};
+
+export type FindOptions = Omit<QueryCriteria, "type"> & {
+  /** Return `undefined` instead of throwing when nothing matches. */
+  optional?: boolean;
+};
+
+export type FindCriteria = QueryCriteria & FindOptions;
+
+export type FindFn = {
+  (type: ShallowRenderType): ComponentNode;
+  (type: ShallowRenderType, options: FindOptions & { optional: true }): ComponentNode | undefined;
+  (type: ShallowRenderType, options?: Omit<FindOptions, "optional">): ComponentNode;
+  (criteria: FindCriteria & { optional: true }): ComponentNode | undefined;
+  (criteria: FindCriteria): ComponentNode;
+};
+
+export type FindAllFn = {
+  (type: ShallowRenderType): ComponentNodeList;
+  (type: ShallowRenderType, options?: FindOptions): ComponentNodeList;
+  (criteria: FindCriteria): ComponentNodeList;
+};
+
 export type ComponentNode = {
   props: () => PropsRecord;
   text: () => string;
-  find: (type: unknown) => ComponentNode;
-  findAll: (type: unknown) => ComponentNodeList;
+  elementTag: () => string;
+  find: FindFn;
+  findAll: FindAllFn;
   trigger: (propName: string, ...args: unknown[]) => unknown;
   click: (...args: unknown[]) => unknown;
 };
@@ -97,8 +134,31 @@ export type ComponentNodeList<
   IndexedLength extends number = 10,
 > = Node[] & TupleOf<Node, IndexedLength>;
 
+export type ShallowOutput = {
+  find: FindFn;
+  findAll: FindAllFn;
+  text: () => string;
+  rerender: (nextProps?: PropsRecord) => unknown;
+  unmount: () => void;
+  nodes: () => TreeNode[];
+  interactions: () => TriggerInteraction[];
+  mockCalls: () => MockCall[];
+  timelineEvents: () => DebugTimelineEvent[];
+};
+
+export type ShallowHookResult<Result> = {
+  readonly current: Result;
+};
+
+export type ShallowHookRenderApi<Result> = {
+  output: ShallowOutput;
+  result: ShallowHookResult<Result>;
+  rerender: () => unknown;
+  unmount: () => void;
+};
+
 export type TreeNode = {
-  type: unknown;
+  type: ShallowRenderType;
   typeName: string;
   props: PropsRecord;
   children: TreeNode[];

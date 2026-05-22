@@ -1,4 +1,5 @@
 import type { DebugTimelineEvent, MockCall, TreeNode } from "../types";
+import * as debugModule from "./debug";
 import { createDebug, getDebugTestInfo } from "./debug";
 import { createNode } from "./tree";
 
@@ -88,6 +89,7 @@ describe("debug", () => {
     const write = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     const mockCalls: MockCall[] = [
       { args: [], name: "useFlag", result: true },
+      { args: [["a", "b"], { ok: true }], name: "loadMany", result: { ok: true } },
       { args: ["id"], error: "boom", name: "load" },
     ];
     const debug = createDebug(
@@ -128,12 +130,18 @@ describe("debug", () => {
         "1. mock useFlag.returnFull(false)",
         "2. render Host { onSelect: fn }",
         "3. useFlag() => true",
-        '4. load("id") threw "boom"',
+        '4. loadMany(["a", "b"], {"ok":true}) => {"ok":true}',
         '5. trigger Child.onSelect("1") => "selected"',
         '6. rerender Host { children: "Text" }',
       ].join("\n"),
     );
-    expect(debug.mocks()).toBe(["1. useFlag() => true", '2. load("id") threw "boom"'].join("\n"));
+    expect(debug.mocks()).toBe(
+      [
+        "1. useFlag() => true",
+        '2. loadMany(["a", "b"], {"ok":true}) => {"ok":true}',
+        '3. load("id") threw "boom"',
+      ].join("\n"),
+    );
     expect(write).toHaveBeenCalledWith(expect.stringContaining("Timeline"));
     expect(write).toHaveBeenCalledWith(expect.stringContaining("Mocks"));
   });
@@ -156,5 +164,93 @@ describe("debug", () => {
 
   test("reads the active test state", () => {
     expect(getDebugTestInfo()?.currentTestName).toContain("reads the active test state");
+  });
+
+  test("omits test metadata when no active test is available", () => {
+    const write = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    vi.spyOn(debugModule, "getDebugTestInfo").mockReturnValue({});
+    const debug = createDebug(createDebugOutput({ nodes: [createNode("span", { children: "Ready" })] }));
+
+    debug.tree();
+
+    const output = String(write.mock.calls[0]?.[0]);
+
+    expect(output).not.toContain("test     ");
+    vi.restoreAllMocks();
+  });
+
+  test("formats unknown debug values", () => {
+    const write = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const debug = createDebug(
+      createDebugOutput({
+        mockCalls: [{ args: [Symbol("token")], name: "mark", result: true }],
+      }),
+    );
+
+    expect(debug.mocks()).toContain("mark");
+    expect(write).toHaveBeenCalled();
+  });
+
+  test("formats element values, mock methods without values, and empty sections", () => {
+    const write = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const debug = createDebug(
+      createDebugOutput({
+        nodes: [createNode("section", { icon: <Child /> })],
+        timelineEvents: [
+          {
+            kind: "mock-config",
+            mock: { method: "reset", name: "useFlag" },
+          },
+        ],
+      }),
+    );
+
+    expect(debug.tree()).toContain("<Child />");
+    expect(debug.timeline()).toContain("mock useFlag.reset()");
+  });
+
+  test("falls back to stdout and promise scheduling when stderr is unavailable", async () => {
+    const stdoutWrite = vi.fn();
+    const consoleLog = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const queueMicrotask = globalThis.queueMicrotask;
+    // @ts-expect-error test fallback scheduling path
+    delete globalThis.queueMicrotask;
+
+    const originalProcess = (
+      globalThis as typeof globalThis & {
+        process?: { stderr?: { write?: (message: string) => unknown } };
+      }
+    ).process;
+    (globalThis as typeof globalThis & { process?: unknown }).process = {
+      stdout: { write: stdoutWrite },
+    };
+
+    createDebug(createDebugOutput({ nodes: [createNode("span", { children: "Ready" })] }));
+    await Promise.resolve();
+
+    expect(stdoutWrite).toHaveBeenCalled();
+    expect(consoleLog).not.toHaveBeenCalled();
+
+    globalThis.queueMicrotask = queueMicrotask;
+    (globalThis as typeof globalThis & { process?: unknown }).process = originalProcess;
+    consoleLog.mockRestore();
+  });
+
+  test("logs through console when no process streams exist", async () => {
+    const consoleLog = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const originalProcess = (
+      globalThis as typeof globalThis & {
+        process?: { stderr?: { write?: (message: string) => unknown } };
+      }
+    ).process;
+    (globalThis as typeof globalThis & { process?: unknown }).process = undefined;
+
+    createDebug(createDebugOutput({ nodes: [createNode("span", { children: "Ready" })] }));
+    await Promise.resolve();
+
+    expect(consoleLog).toHaveBeenCalledWith(expect.stringContaining("Shallow Debug"));
+
+    (globalThis as typeof globalThis & { process?: unknown }).process = originalProcess;
+    consoleLog.mockRestore();
   });
 });

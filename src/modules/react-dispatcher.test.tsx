@@ -26,6 +26,32 @@ describe("withReactDispatcher", () => {
     expect(result.ref).toEqual({ current: "current" });
   });
 
+  test("runs callbacks when React internals are unavailable", () => {
+    const reactWithInternals = React as typeof React & {
+      __CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE?: {
+        H?: unknown;
+      };
+    };
+    const key = "__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE";
+    const previousInternals = reactWithInternals[key];
+    delete reactWithInternals[key];
+
+    const value = withReactDispatcher(new Map(), () => "ok");
+
+    expect(value).toBe("ok");
+
+    reactWithInternals[key] = previousInternals;
+  });
+
+  test("supports effect and debug hook no-ops", () => {
+    withReactDispatcher(new Map(), () => {
+      React.useEffect(() => undefined);
+      React.useLayoutEffect(() => undefined);
+      React.useInsertionEffect(() => undefined);
+      React.useDebugValue("state");
+    });
+  });
+
   test("falls back to the context default value", () => {
     const Context = React.createContext("default");
 

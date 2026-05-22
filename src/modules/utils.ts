@@ -1,5 +1,5 @@
 import React from "react";
-import type { PropsRecord } from "../types";
+import type { PropsRecord, ShallowRenderType } from "../types";
 
 type NamedFunction = Function & {
   displayName?: string;
@@ -10,7 +10,7 @@ export const isRecord = (value: unknown): value is PropsRecord => {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 };
 
-export const getName = (type: unknown) => {
+export const getName = (type: ShallowRenderType | Record<string, unknown>) => {
   if (typeof type === "string") {
     return type;
   }
