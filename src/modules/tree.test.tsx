@@ -25,11 +25,7 @@ describe("tree", () => {
   test("exposes the matched subtree through nodes on found nodes", () => {
     const output = createOutput(vi.fn());
     const textChild = createNode("#text", { children: "Add new todo" });
-    const textbox = createNode(
-      "div",
-      { contentEditable: true, role: "textbox" },
-      [textChild],
-    );
+    const textbox = createNode("div", { contentEditable: true, role: "textbox" }, [textChild]);
     output.setTree([createNode("section", {}, [textbox])]);
 
     const found = output.find("div", { props: { role: "textbox" } });

@@ -45,11 +45,9 @@ describe("debug", () => {
     output.setTree([
       createNode("div", { className: "relative min-w-0" }, [
         createNode("div", { className: "relative h-full" }, [
-          createNode(
-            "div",
-            { contentEditable: true, role: "textbox", onPaste: () => undefined },
-            [createNode("#text", { children: "Add new todo" })],
-          ),
+          createNode("div", { contentEditable: true, role: "textbox", onPaste: () => undefined }, [
+            createNode("#text", { children: "Add new todo" }),
+          ]),
           createNode("span", { className: "placeholder" }, [
             createNode("#text", { children: "Add new todo" }),
           ]),
