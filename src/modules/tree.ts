@@ -134,6 +134,7 @@ const createComponentNode = (node: TreeNode, afterTrigger?: AfterTrigger): Compo
     props: () => node.props,
     text: () => getRenderedNodeText(node),
     elementTag: () => node.typeName,
+    nodes: () => [node],
     ...createFindHandlers((criteria) => {
       const typeOnly = isTypeOnlyFind(criteria);
 

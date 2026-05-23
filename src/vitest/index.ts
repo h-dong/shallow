@@ -30,7 +30,7 @@ const isComponentNode = (received: unknown): received is ShallowNodeLike =>
   received !== null &&
   "props" in received &&
   typeof (received as ShallowNodeLike).props === "function" &&
-  !("nodes" in received);
+  !("__shallow" in received);
 
 const outerText = (received: ShallowOutputLike) => {
   const outer = getOuterNode(received);

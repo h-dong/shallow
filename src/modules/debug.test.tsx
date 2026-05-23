@@ -1,7 +1,7 @@
 import type { DebugTimelineEvent, MockCall, TreeNode } from "../types";
 import * as debugModule from "./debug";
 import { createDebug, getDebugTestInfo } from "./debug";
-import { createNode } from "./tree";
+import { createNode, createOutput } from "./tree";
 
 function Child() {
   return null;
@@ -37,6 +37,35 @@ describe("debug", () => {
     expect(write).toHaveBeenCalledWith(expect.stringContaining("Shallow Debug"));
     expect(write).toHaveBeenCalledWith(expect.stringContaining("Component tree"));
     expect(write).toHaveBeenCalledWith(expect.stringContaining("Default"));
+  });
+
+  test("formats trees for nodes returned from find", () => {
+    vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const output = createOutput(vi.fn());
+    output.setTree([
+      createNode("div", { className: "relative min-w-0" }, [
+        createNode("div", { className: "relative h-full" }, [
+          createNode(
+            "div",
+            { contentEditable: true, role: "textbox", onPaste: () => undefined },
+            [createNode("#text", { children: "Add new todo" })],
+          ),
+          createNode("span", { className: "placeholder" }, [
+            createNode("#text", { children: "Add new todo" }),
+          ]),
+        ]),
+      ]),
+    ]);
+
+    const textbox = output.find("div", { props: { role: "textbox" } });
+    const debug = createDebug(textbox);
+
+    expect(debug.tree()).toBe(
+      [
+        'div { contentEditable: true, role: "textbox", onPaste: fn }',
+        '  #text { children: "Add new todo" }',
+      ].join("\n"),
+    );
   });
 
   test("formats component trees", () => {

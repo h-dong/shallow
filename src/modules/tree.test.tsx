@@ -22,6 +22,22 @@ describe("tree", () => {
     expect(textNode.typeName).toBe("#text");
   });
 
+  test("exposes the matched subtree through nodes on found nodes", () => {
+    const output = createOutput(vi.fn());
+    const textChild = createNode("#text", { children: "Add new todo" });
+    const textbox = createNode(
+      "div",
+      { contentEditable: true, role: "textbox" },
+      [textChild],
+    );
+    output.setTree([createNode("section", {}, [textbox])]);
+
+    const found = output.find("div", { props: { role: "textbox" } });
+
+    expect(found.nodes()).toEqual([textbox]);
+    expect(found.nodes()[0]?.children).toEqual([textChild]);
+  });
+
   test("finds nodes by component, host type, and display name", () => {
     const output = createOutput(vi.fn());
     const RenamedRow = () => null;

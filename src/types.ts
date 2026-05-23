@@ -93,6 +93,7 @@ export type ComponentNode = {
   props: () => PropsRecord;
   text: () => string;
   elementTag: () => string;
+  nodes: () => TreeNode[];
   find: FindFn;
   findAll: FindAllFn;
   trigger: (propName: string, ...args: unknown[]) => unknown;

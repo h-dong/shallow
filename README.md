@@ -182,13 +182,15 @@ Renders the root component and returns an output object.
 
 The output supports:
 
-- `find(...)` / `findAll(...)` — locate nodes (see below)
+- `find(...)` / `findAll(...)` — locate nodes by type, criteria, or JSX query (see below)
 - `text()`
 - `rerender(nextProps)`
 - `unmount()`
 - `nodes()`
 
-Found nodes also support `find(...)`, `findAll(...)`, `props()`, `text()`, `trigger(...)`, and `click()`.
+Found nodes also support `find(...)`, `findAll(...)`, `props()`, `text()`, `nodes()`, `trigger(...)`, and `click()`.
+
+`debug(foundNode)` prints that node and its subtree the same way as `debug(output)`.
 
 #### `find(type)`
 
@@ -233,6 +235,31 @@ Locate by props, text, test id, and more without passing the type as a separate 
 ```ts
 output.find({ testId: "menu-button" });
 output.find({ type: Button, props: { children: "Save" } });
+```
+
+#### `find(<Element ... />)`
+
+You can also pass a JSX element. Shallow treats it like a criteria object built from the element’s `type` and `props`:
+
+```tsx
+const textbox = output.find(<div role="textbox" />);
+```
+
+Under the hood, `find` does not mount or render that JSX. The element is only a query description. When the argument is not a string or component type, shallow spreads the React element into find criteria, so the host tag becomes `type` and attributes become a partial `props` match:
+
+```ts
+// These are equivalent when the tree actually renders a matching <div>:
+output.find(<div role="textbox" />);
+output.find("div", { role: "textbox" });
+output.find({ type: "div", role: "textbox" });
+```
+
+Use the same tag and attributes you expect in the shallow tree. If the component renders `<input role="textbox" />`, query with `<input role="textbox" />` (or `output.find("input", { role: "textbox" })`), not `<div role="textbox" />`.
+
+Works with custom components too — props on the JSX element are matched with the same partial prop rules as `find({ type, props })`:
+
+```tsx
+output.find(<Button type="submit">Save</Button>);
 ```
 
 Criteria:

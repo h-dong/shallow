@@ -328,4 +328,34 @@ describe("shallow", () => {
       },
     ]);
   });
+
+  test("debug prints the subtree for a node returned from find", () => {
+    vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+
+    function TextboxField() {
+      return (
+        <div className="relative min-w-0">
+          <div className="relative h-full">
+            <div
+              contentEditable
+              role="textbox"
+              aria-placeholder="Add new todo"
+              onPaste={() => undefined}
+            />
+            <span className="placeholder">Add new todo</span>
+          </div>
+        </div>
+      );
+    }
+
+    const { render, debug } = shallow(TextboxField);
+    const output = render();
+    const textbox = output.find("div", { props: { role: "textbox" } });
+
+    expect(debug(textbox).tree()).toBe(
+      'div { contentEditable: true, role: "textbox", aria-placeholder: "Add new todo", onPaste: fn }',
+    );
+    expect(debug(output).tree()).toContain('role: "textbox"');
+    expect(debug(output).tree()).toContain('className: "relative min-w-0"');
+  });
 });
